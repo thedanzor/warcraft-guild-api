@@ -1,0 +1,7 @@
+# Ignored directories:
+gems
+data
+node_modules
+doc
+reports
+src/config
