@@ -29,7 +29,7 @@ router.route("/view")
 		res.json({"error" : true, "response" : "Invalid request"});
 	});
 
-router.route("/view/:name/:realm/:region")
+router.route("/view/:name/:realm/:region/")
 	.get( function (req, res) {
 		var response = {};
 		var guildConfig = {
@@ -38,7 +38,31 @@ router.route("/view/:name/:realm/:region")
 			"region": req.params.region
 		};
 
-		console.log(guildConfig);
+		dbguild.find(guildConfig, function(err, data) {
+			if (validateData(data)) {
+				res.json({"error" : false, "message" : data, "code": 1});
+			} else {
+				res.json({"error" : false, "message" : 'Guild Not Found', "code": 0});
+			}
+		});
+	});
+
+// If the user is requesting guild information
+router.route("/init")
+	.get( function (req, res) {
+		var response = {};
+
+		res.json({"error" : true, "Message" : "Invalid request"});
+	});
+
+router.route("/init/:name/:realm/:region/")
+	.get( function (req, res) {
+		var response = {};
+		var guildConfig = {
+			"name": req.params.name,
+			"realm": req.params.realm,
+			"region": req.params.region
+		};
 
 		dbguild.find(guildConfig, function(err, data) {
 			if (err || !data) {
@@ -52,26 +76,23 @@ router.route("/view/:name/:realm/:region")
 					} else if (!inprocess(guildConfig)) {
 						res.json({"error" : false, "message" : "Guild has been found, collecting data", "code": 2});
 
-						// Check if there is not already a fecther running
-						console.log(guildConfig);
 						// Start collecting new data
 						fecther(guildConfig, function(data) {
-							console.log(data);
 							if (data) {
 								// We remove it from the list of running fetchers
 								inprocess(guildConfig, true);
 
 								var db = new dbguild();
 
-								db.name = data.name;
-								db.realm = data.realm;
-								db.region = data.region;
+								db.name = guildConfig.name;
+								db.realm = guildConfig.realm;
+								db.region = guildConfig.region;
 								db.roster = data.roster;
-								db.events = [];
-								db.teams = [];
+								db.events = db.events || [];
+								db.teams = db.teams || [];
 
 								db.save(function(err){
-									if(err) {
+									if (err) {
 										console.log('GUILD NOT ADDED');
 									} else {
 										console.log('GUILD ADDED');
@@ -83,6 +104,46 @@ router.route("/view/:name/:realm/:region")
 						res.json({"error" : false, "message" : "Guild has been found, Fetcher is already running", "code": 3});
 					}
 				});
+			}
+		});
+	});
+
+// If the user is requesting guild information
+router.route("/update/:name/:realm/:region/")
+	.patch( function (req, res) {
+		var body = req.body;
+		var guildConfig = {
+			"name": req.params.name,
+			"realm": req.params.realm,
+			"region": req.params.region
+		};
+
+		dbguild.find(guildConfig, function(err, data) {
+			if (err || !data) {
+				res.json({"error" : true, "message" : "Error fetching data", "code": 0});
+			} else if (validateData(data)) {
+				var roster = data[0].roster[0];
+				var character = roster[body.name];
+
+				if (body && body.action && body.action.type === 'dkp') {
+					if (body.action.action === 'add' && character) {
+						character.dkp = character.dkp + body.action.value;
+					} else if (character){
+						character.dkp = character.dkp - body.action.value;
+					}
+
+					var guildUpdate = {
+						"roster": roster
+					}
+
+					dbguild.update(guildConfig, guildUpdate, { upsert: false }, function (err, data) {
+						if (!err) {
+							res.json({"error" : false, "message" : "Updated user", "code": 1});
+						}
+					});
+				} else {
+					res.json({"error" : true, "message" : "User not found", "code": 0});
+				}
 			}
 		});
 	});
