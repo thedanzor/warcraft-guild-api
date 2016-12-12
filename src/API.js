@@ -11,6 +11,9 @@ var getGuild     = require("./utils/validate_guild");
 var fecther      = require("./fetcher");
 var inprocess    = require("./utils/check_fetcher");
 
+// Features
+var DKP          = require("./dkp/dkp");
+
 // Globals
 var guild;
 
@@ -123,26 +126,13 @@ router.route("/update/:name/:realm/:region/")
 				res.json({"error" : true, "message" : "Error fetching data", "code": 0});
 			} else if (validateData(data)) {
 				var roster = data[0].roster[0];
-				var character = roster[body.name];
 
 				if (body && body.action && body.action.type === 'dkp') {
-					if (body.action.action === 'add' && character) {
-						character.dkp = character.dkp + body.action.value;
-					} else if (character){
-						character.dkp = character.dkp - body.action.value;
-					}
-
-					var guildUpdate = {
-						"roster": roster
-					}
-
-					dbguild.update(guildConfig, guildUpdate, { upsert: false }, function (err, data) {
-						if (!err) {
-							res.json({"error" : false, "message" : "Updated user", "code": 1});
-						}
+					DKP(dbguild, guildConfig, body, roster, function (response) {
+						res.json({"error" : true, "message" : response, "code": 0});
 					});
 				} else {
-					res.json({"error" : true, "message" : "User not found", "code": 0});
+					res.json({"error" : true, "message" : "User or Action Not Found", "code": 0});
 				}
 			}
 		});
