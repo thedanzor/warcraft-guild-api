@@ -13,6 +13,7 @@ var inprocess    = require("./utils/check_fetcher");
 
 // Features
 var DKP          = require("./dkp/dkp");
+var Character    = require("./character/character");
 
 // Globals
 var guild;
@@ -127,12 +128,24 @@ router.route("/update/:name/:realm/:region/")
 			} else if (validateData(data)) {
 				var roster = data[0].roster[0];
 
-				if (body && body.action && body.action.type === 'dkp') {
-					DKP(dbguild, guildConfig, body, roster, function (response) {
-						res.json({"error" : true, "message" : response, "code": 0});
-					});
+				if (body && body.action) {
+					if (body.action.type === 'dkp') {
+						DKP(dbguild, guildConfig, body, roster, function (response) {
+							res.json({"error" : false, "message" : response, "code": 0});
+						});
+					} else if (body.action.type === 'update_character') {
+						Character.update(dbguild, guildConfig, body, roster, function(response) {
+							res.json({"error": false, "message": response, "code": 0})
+						});
+					} else if (body.action.type === 'add_character') {
+						Character.add(dbguild, guildConfig, body, roster, function(response) {
+							res.json({"error": false, "message": response, "code": 0})
+						});
+					} else {
+						res.json({"error" : true, "message" : "Action Not Found", "code": 0});
+					}
 				} else {
-					res.json({"error" : true, "message" : "User or Action Not Found", "code": 0});
+					res.json({"error" : true, "message" : "Invalid request sent", "code": 0});
 				}
 			}
 		});

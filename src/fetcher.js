@@ -1,10 +1,13 @@
-var getRegion   = require("./utils/get_apiRegion");
-var CONFIG      = require("./config");
-var request     = require("request");
+var getRegion   = require("./utils/get_apiRegion"); // Returns the correct API URL based on region
+var CONFIG      = require("./config"); // Application config, for settings and API Key
+var request     = require("request"); // Request module, for getting data
 
+// Store the information globally
+// FIXME: Don't store globally
 var api;
 var guild;
 
+// Build the character url
 var buildCharacterUrl = function (charData) {
 	// Build API URL for the member
 	var url = api + '/wow/character/' +
@@ -14,6 +17,7 @@ var buildCharacterUrl = function (charData) {
 	return url;
 };
 
+// Fetch a character
 var Character = function (url, done) {
 	// Request the character s data
 	request(url, function (error, response, body) {
