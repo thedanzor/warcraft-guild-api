@@ -5,15 +5,16 @@
   "main": "src/API.js",
   "private": true,
   "scripts": {
-	"start": "node ./src/API.js",
-	"db": "mongod --dbpath ./data"
+    "start": "node ./src/API.js",
+    "db": "mongod --dbpath ./data"
   },
   "author": "Scott Jones",
   "email": "scott@thedanzorlabs.com",
   "dependencies": {
-	"body-parser": "^1.13.3",
-	"express": "^4.13.3",
-	"request": "^2.71.0",
-	"mongoose": "^4.1.2"
+    "body-parser": "^1.13.3",
+    "express": "^4.13.3",
+    "mongoose": "^4.1.2",
+    "passport-bnet": "^1.2.1",
+    "request": "^2.71.0"
   }
 }
