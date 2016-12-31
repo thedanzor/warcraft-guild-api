@@ -1,5 +1,8 @@
+var CONFIG      =   require('./config')
 var express     =   require("express");
-var PORT        =   3000;
+var fs          =   require('fs');
+var https       =   require('https');
+var passport    =   require("passport");
 var app         =   express();
 var bodyParser  =   require("body-parser");
 var dbguild     =   require("./models/guilds");
@@ -14,15 +17,51 @@ var inprocess    = require("./utils/check_fetcher");
 
 // Features
 var DKP          = require("./dkp/dkp");
+var user         = {
+	"message": "You are not logged in"
+};
 
 // Globals
 var guild;
 
 app.use(bodyParser.json());
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(bodyParser.urlencoded({"extended" : false}));
 
+// oAuth setup
+passport.use(new BnetStrategy({
+	clientID: CONFIG.BNET_ID,
+	clientSecret: CONFIG.BNET_SECRET,
+	callbackURL: "https://localhost:8888/auth/bnet/callback",
+	region: "eu"
+}, function(accessToken, refreshToken, profile, done) {
+	return done(null, profile);
+}));
+
+passport.serializeUser(function(user, done) {
+	done(null, user);
+});
+
+passport.deserializeUser(function(user, done) {
+	done(null, user);
+});
+
+app.get('/auth/bnet/callback',
+	passport.authenticate('bnet', { failureRedirect: '/' }),
+	function(req, res) {
+		user = req.user;
+		res.redirect('/users/' + req.user.battletag);
+	}
+);
+
+app.get('/auth/bnet',
+	passport.authenticate('bnet')
+);
+
+// Start routing
 router.get("/",function(req,res){
-	res.json({"error" : false, "response" : "invalid request"});
+	res.json({"error" : true, "response" : "Invalid request"});
 });
 
 // If the user is requesting guild information
@@ -31,6 +70,13 @@ router.route("/view")
 		var response = {};
 
 		res.json({"error" : true, "response" : "Invalid request"});
+	});
+
+router.route("/users/:battletag")
+	.get( function (req, res) {
+		var response = {};
+
+		res.json({"error" : false, "message" : user, "code": 1});
 	});
 
 router.route("/view/:name/:realm/:region/")
@@ -143,6 +189,11 @@ router.route("/update/:name/:realm/:region/")
 		});
 	});
 
-app.use('/',router);
-app.listen(PORT);
-console.log("Application started in PORT:" + PORT);
+
+app.use('/', router);
+https.createServer({
+	key: fs.readFileSync('./keys/key.pem'),
+	cert: fs.readFileSync('./keys/cert.pem')
+}, app).listen(8888);
+
+console.log("Application started in PORT:" + CONFIG.port);
