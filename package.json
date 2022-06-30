@@ -16,7 +16,7 @@
     "fs": "0.0.1-security",
     "https": "^1.0.0",
     "mongoose": "^4.1.2",
-    "passport": "^0.3.2",
+    "passport": "^0.6.0",
     "passport-bnet": "^1.2.1",
     "request": "^2.71.0"
   }
